@@ -3984,7 +3984,13 @@ $$;
 
 -- 2) RLS policies on storage.objects for 'order-pdfs'
 do $$ begin
-  if has_table_privilege('storage.objects', 'ALTER') then
+  if exists (
+    select 1
+    from pg_tables
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and tableowner = current_user
+  ) then
     if not exists (
       select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_insert_auth'
     ) then
@@ -4367,7 +4373,13 @@ update storage.buckets set public = false where id = 'order-pdfs';
 
 -- RLS для объектов только этого bucket’а
 do $$ begin
-  if has_table_privilege('storage.objects', 'ALTER') then
+  if exists (
+    select 1
+    from pg_tables
+    where schemaname = 'storage'
+      and tablename = 'objects'
+      and tableowner = current_user
+  ) then
     if not exists (
       select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_insert_auth'
     ) then
