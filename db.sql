@@ -7,9 +7,16 @@
 -- Safe to run multiple times.
 -- ============================================================
 
--- Extensions & helper trigger for updated_at
-create extension if not exists pgcrypto;
-create extension if not exists "uuid-ossp";
+do $$
+begin
+  if not exists (select 1 from pg_extension where extname = 'pgcrypto') then
+    raise notice 'Extension "pgcrypto" is not installed. Enable it from the Supabase dashboard.';
+  end if;
+  if not exists (select 1 from pg_extension where extname = 'uuid-ossp') then
+    raise notice 'Extension "uuid-ossp" is not installed. Enable it from the Supabase dashboard.';
+  end if;
+end;
+$$;
 
 create or replace function public.set_updated_at()
 returns trigger as $$
