@@ -3637,7 +3637,12 @@ ALTER TABLE public.warehouse_stationery_inventories ENABLE ROW LEVEL SECURITY;
 CREATE POLICY inv_ins ON public.warehouse_stationery_inventories
   FOR INSERT TO authenticated WITH CHECK (true);
 -----------------------------------------------------------------------------------------------------------------
-alter table public.warehouse_stationery_inventories 
+-- Ensure orders table exists before applying subsequent patches.
+create table if not exists public.orders (
+  id uuid primary key default gen_random_uuid()
+);
+
+alter table public.warehouse_stationery_inventories
 add column counted_qty numeric;
 ---------------------------------------------------------------------------------------------------------------
 notify pgrst, 'reload schema';
