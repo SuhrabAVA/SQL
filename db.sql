@@ -4731,26 +4731,35 @@ WHERE o.id = r.id;
 -- Run in Supabase SQL editor.
 
 -- 1) Ensure column exists
-ALTER TABLE IF EXISTS production.plans
-  ADD COLUMN IF NOT EXISTS order_id uuid;
+DO $$
+BEGIN
+  IF to_regclass('production.plans') IS NOT NULL THEN
+    -- 1) Ensure column exists
+    EXECUTE $$ALTER TABLE production.plans ADD COLUMN IF NOT EXISTS order_id uuid$$;
 
--- 2) Backfill from order_code -> orders.assignment_id
-UPDATE production.plans p
-   SET order_id = o.id
-  FROM public.orders o
- WHERE p.order_id IS NULL
-   AND p.order_code IS NOT NULL
-   AND o.assignment_id = p.order_code;
+    -- 2) Backfill from order_code -> orders.assignment_id
+    EXECUTE $$
+      UPDATE production.plans p
+         SET order_id = o.id
+        FROM public.orders o
+       WHERE p.order_id IS NULL
+         AND p.order_code IS NOT NULL
+         AND o.assignment_id = p.order_code
+    $$;
 
--- 3) Recreate FK with CASCADE
-ALTER TABLE IF EXISTS production.plans
-  DROP CONSTRAINT IF EXISTS plans_order_id_fkey;
-ALTER TABLE IF EXISTS production.plans
-  ADD CONSTRAINT plans_order_id_fkey
-  FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE CASCADE;
+    -- 3) Recreate FK with CASCADE
+    EXECUTE $$ALTER TABLE production.plans DROP CONSTRAINT IF EXISTS plans_order_id_fkey$$;
+    EXECUTE $$
+      ALTER TABLE production.plans
+        ADD CONSTRAINT plans_order_id_fkey
+        FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE CASCADE
+    $$;
 
--- 4) Helpful index
-CREATE INDEX IF NOT EXISTS idx_production_plans_order ON production.plans(order_id);
+    -- 4) Helpful index
+    EXECUTE $$CREATE INDEX IF NOT EXISTS idx_production_plans_order ON production.plans(order_id)$$;
+  END IF;
+END
+$$;
 
 -- 5) Trigger to auto-fill order_id from order_code on future inserts/updates
 CREATE OR REPLACE FUNCTION production.set_plan_order_id_from_code()
@@ -4767,10 +4776,18 @@ BEGIN
 END
 $$;
 
-DROP TRIGGER IF EXISTS trg_plans_set_order_id ON production.plans;
-CREATE TRIGGER trg_plans_set_order_id
-  BEFORE INSERT OR UPDATE ON production.plans
-  FOR EACH ROW EXECUTE FUNCTION production.set_plan_order_id_from_code();
+DO $$
+BEGIN
+  IF to_regclass('production.plans') IS NOT NULL THEN
+    EXECUTE $$DROP TRIGGER IF EXISTS trg_plans_set_order_id ON production.plans$$;
+    EXECUTE $$
+      CREATE TRIGGER trg_plans_set_order_id
+        BEFORE INSERT OR UPDATE ON production.plans
+        FOR EACH ROW EXECUTE FUNCTION production.set_plan_order_id_from_code()
+    $$;
+  END IF;
+END
+$$;
 
 -- 6) Refresh PostgREST cache
 SELECT pg_notify('pgrst', 'reload schema');
