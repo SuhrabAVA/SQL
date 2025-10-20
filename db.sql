@@ -10,13 +10,17 @@
 do $$
 begin
   if not exists (select 1 from pg_extension where extname = 'pgcrypto') then
-    raise notice 'Extension "pgcrypto" is not installed. Enable it from the Supabase dashboard.';
+    raise exception 'Extension "pgcrypto" must be enabled before running this script. Use Supabase project settings → Database → Extensions.';
   end if;
   if not exists (select 1 from pg_extension where extname = 'uuid-ossp') then
-    raise notice 'Extension "uuid-ossp" is not installed. Enable it from the Supabase dashboard.';
+    raise exception 'Extension "uuid-ossp" must be enabled before running this script. Use Supabase project settings → Database → Extensions.';
   end if;
 end;
 $$;
+
+-- Supabase does not grant pg_read_file() privileges to non-superusers, so the script avoids
+-- running CREATE EXTENSION commands directly. Ensure the required extensions above are enabled
+-- from the dashboard before executing the remainder of this file.
 
 create or replace function public.set_updated_at()
 returns trigger as $$
@@ -1303,8 +1307,6 @@ with check (bucket_id = 'employee_photos');
 -- Схема согласована с TmcModel (snake_case поля), без изменения UI.
 -- ============================================================
 
-create extension if not exists pgcrypto;
-create extension if not exists "uuid-ossp";
 
 create or replace function public.set_updated_at()
 returns trigger as $$
@@ -2399,7 +2401,6 @@ ALTER TABLE public.warehouse_categories
 
 ---------------------------------------------------------------------------------------------------------------
 -- Расширение для UUID (если ещё не включено)
-create extension if not exists "pgcrypto";
 
 -- =========================
 -- Таблицы
@@ -2493,7 +2494,6 @@ insert into public.warehouse_categories (code, title, has_subtables) values
 on conflict (code) do nothing;
 ------------------------------------------------------------------------------------------------------------
 -- =============== Extensions ===============
-create extension if not exists "pgcrypto";
 
 -- =============== Tables ===============
 -- Категории
@@ -2615,7 +2615,6 @@ insert into public.warehouse_categories (code, title, has_subtables) values
 on conflict (code) do nothing;
 --------------------------------------------------------------------------------------------------------------
 -- =============== базовые расширения ===============
-create extension if not exists "pgcrypto";
 
 -- =============== таблицы логов ===============
 create table if not exists public.warehouse_category_writeoffs (
@@ -2677,7 +2676,6 @@ end$$;
 -- ============================================================================
 
 -- Ensure uuid generator exists (no-op if already installed)
-create extension if not exists "pgcrypto";
 
 -- 1) ARRIVAL TABLES -----------------------------------------------------------
 
@@ -2959,7 +2957,6 @@ DO $$ BEGIN
 EXCEPTION WHEN duplicate_object THEN NULL; END $$;
 ---------------------------------------------------------------------------------------
 -- 0) На всякий случай (для gen_random_uuid)
-create extension if not exists pgcrypto;
 
 -- 1) Таблица без UNIQUE по lower(name)
 create table if not exists paper_items (
@@ -3081,8 +3078,6 @@ create index if not exists idx_paper_items_name on paper_items (lower(name));
 -- =============================================================
 
 -- Extensions (Supabase usually has these enabled; keep for local dev)
-create extension if not exists "pgcrypto";   -- for gen_random_uuid
-create extension if not exists "uuid-ossp";  -- alternative UUID generation
 
 -- ------------------------------
 -- Base table
@@ -3340,7 +3335,6 @@ create trigger trg_pens_inventory_apply
 after insert on public.warehouse_pens_inventories
 for each row execute function public.warehouse_pens_apply_inventory();
 -------------------------------------------------------------------------------------------
-create extension if not exists pgcrypto;
 
 create table if not exists public.warehouse_deleted_records (
   id uuid primary key default gen_random_uuid(),
@@ -3818,7 +3812,6 @@ end $$;
 -- Safe to run multiple times.
 -- =============================
 
-create extension if not exists "pgcrypto";
 
 -- Helper trigger function for updated_at
 create or replace function public.set_updated_at()
@@ -4028,7 +4021,6 @@ notify pgrst, 'reload schema';
 -- Creates table + trigger + RLS + realtime + cache refresh
 -- =============================================================
 
-create extension if not exists "pgcrypto";
 
 -- updated_at helper
 create or replace function public.set_updated_at()
@@ -4101,7 +4093,6 @@ values ('Базовая очередь', jsonb_build_array(
 ------------------------------------------------------------------------------------------------------------------
 
 -- === 1) Таблица очередей (если её ещё нет)
-create extension if not exists "pgcrypto";
 create table if not exists public.queues (
   id         uuid primary key default gen_random_uuid(),
   name       text not null unique,
@@ -4167,8 +4158,6 @@ notify pgrst, 'reload schema';
 -- ============================================================
 
 -- 0) Extensions
-create extension if not exists "pgcrypto";     -- gen_random_uuid()
-create extension if not exists "uuid-ossp";
 
 -- 1) Helpers: updated_at + created_by autofill
 create or replace function public.set_updated_at()
@@ -4484,7 +4473,6 @@ notify pgrst, 'reload schema';
 -------------------------------------------------------------------------------------------------------------------
 
 -- 1) Функции (на всякий случай переопределим)
-create extension if not exists "pgcrypto";
 
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
@@ -4541,7 +4529,6 @@ create trigger trg_order_files_created_by
 notify pgrst, 'reload schema';
 -----------------------------------------------------------------------------------------------------------
 -- Генератор UUID
-create extension if not exists "pgcrypto";
 
 -- Гарантируем дефолт на всех PK-UUID
 alter table public.orders
@@ -4567,7 +4554,6 @@ alter table if exists public.plan_templates
 notify pgrst, 'reload schema';
 ----------------------------------------------------------------------------------------------------------
 -- Таблица событий по заказам
-create extension if not exists "pgcrypto";
 
 create table if not exists public.order_events (
   id          uuid primary key default gen_random_uuid(),
@@ -4935,8 +4921,6 @@ alter table orders add column actual_qty numeric(14,3) default 0;
 -- Fixes nested $$ by using $do$ and $fn$ tags. Safe to re-run.
 
 -- ========== 0) Extensions ==========
-create extension if not exists "pgcrypto";
-create extension if not exists "uuid-ossp";
 
 -- ========== 1) Common updated_at helper ==========
 create or replace function public.set_updated_at()
@@ -5120,8 +5104,6 @@ notify pgrst, 'reload schema';
 -- Fixes nested $$ by using $do$ and $fn$ tags. Safe to re-run.
 
 -- ========== 0) Extensions ==========
-create extension if not exists "pgcrypto";
-create extension if not exists "uuid-ossp";
 
 -- ========== 1) Common updated_at helper ==========
 create or replace function public.set_updated_at()
@@ -5426,8 +5408,6 @@ $$;
 -- ==============================
 -- Extensions
 -- ==============================
-create extension if not exists pgcrypto;
-create extension if not exists "uuid-ossp";
 
 -- ==============================
 -- Schema
@@ -5952,8 +5932,6 @@ join production.plan_stages s on s.plan_id = p.id;
 -- =========================
 -- 0) Базовые расширения
 -- =========================
-create extension if not exists "uuid-ossp";
-create extension if not exists "pgcrypto";
 
 -- =========================
 -- 1) ENUM статусов
@@ -6392,8 +6370,6 @@ end$$;
 -----------------------------------------------------------------------------------------------------------------------------------
 
 -- 0) Базовые функции/расширения (на случай, если ещё не созданы)
-create extension if not exists "uuid-ossp";
-create extension if not exists "pgcrypto";
 
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
@@ -6513,8 +6489,6 @@ end$$;
 notify pgrst, 'reload schema';
 -- END of План Произв.sql\n
 -- 2025-09-23 setup tasks, production_plans, documents
-create extension if not exists pgcrypto;
-create extension if not exists "uuid-ossp";
 
 -- Универсальная функция для updated_at
 create or replace function public.set_updated_at()
@@ -6640,7 +6614,6 @@ create policy plan_stages_sel_any
 -- Creates orders.prod_template_id (FK) if missing, and trigger+function.
 -- ====================================================================
 
-create extension if not exists "pgcrypto";
 
 -- 0) Ensure helper for updated_at exists
 create or replace function public.set_updated_at()
@@ -6851,7 +6824,6 @@ notify pgrst, 'reload schema';
 -- Creates orders.prod_template_id (FK) if missing, and trigger+function.
 -- ====================================================================
 
-create extension if not exists "pgcrypto";
 
 -- 0) Ensure helper for updated_at exists
 create or replace function public.set_updated_at()
@@ -7169,7 +7141,6 @@ grant execute on function public.apply_template_to_order(uuid, uuid, text) to au
 -- Safely upgrades an existing public.plan_templates table to the expected schema.
 
 -- 0) Extensions (safe to re-run)
-create extension if not exists pgcrypto;
 
 -- 1) Ensure table exists
 create table if not exists public.plan_templates (
@@ -7266,7 +7237,6 @@ create policy "plan_templates delete for owners"
 -- Creates a dedicated table for production plan templates + RLS + helpers.
 
 -- Extensions
-create extension if not exists pgcrypto;
 
 -- Table
 create table if not exists public.plan_templates (
@@ -7342,7 +7312,6 @@ create policy "plan_templates delete for owners"
 -- ============================================================
 
 -- 0) Extensions & helper
-create extension if not exists pgcrypto;
 
 create or replace function public.set_updated_at()
 returns trigger language plpgsql as $$
