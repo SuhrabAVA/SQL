@@ -3984,33 +3984,35 @@ $$;
 
 -- 2) RLS policies on storage.objects for 'order-pdfs'
 do $$ begin
-  if not exists (
-    select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_insert_auth'
-  ) then
-    create policy "order_pdfs_insert_auth" on storage.objects for insert to authenticated
-      with check (bucket_id = 'order-pdfs');
-  end if;
+  if has_table_privilege('storage.objects', 'ALTER') then
+    if not exists (
+      select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_insert_auth'
+    ) then
+      create policy "order_pdfs_insert_auth" on storage.objects for insert to authenticated
+        with check (bucket_id = 'order-pdfs');
+    end if;
 
-  if not exists (
-    select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_update_owner'
-  ) then
-    create policy "order_pdfs_update_owner" on storage.objects for update to authenticated
-      using (bucket_id = 'order-pdfs' and owner = auth.uid())
-      with check (bucket_id = 'order-pdfs' and owner = auth.uid());
-  end if;
+    if not exists (
+      select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_update_owner'
+    ) then
+      create policy "order_pdfs_update_owner" on storage.objects for update to authenticated
+        using (bucket_id = 'order-pdfs' and owner = auth.uid())
+        with check (bucket_id = 'order-pdfs' and owner = auth.uid());
+    end if;
 
-  if not exists (
-    select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_delete_owner'
-  ) then
-    create policy "order_pdfs_delete_owner" on storage.objects for delete to authenticated
-      using (bucket_id = 'order-pdfs' and owner = auth.uid());
-  end if;
+    if not exists (
+      select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_delete_owner'
+    ) then
+      create policy "order_pdfs_delete_owner" on storage.objects for delete to authenticated
+        using (bucket_id = 'order-pdfs' and owner = auth.uid());
+    end if;
 
-  if not exists (
-    select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_select_auth'
-  ) then
-    create policy "order_pdfs_select_auth" on storage.objects for select to authenticated
-      using (bucket_id = 'order-pdfs');
+    if not exists (
+      select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_select_auth'
+    ) then
+      create policy "order_pdfs_select_auth" on storage.objects for select to authenticated
+        using (bucket_id = 'order-pdfs');
+    end if;
   end if;
 end $$;
 
@@ -4365,33 +4367,35 @@ update storage.buckets set public = false where id = 'order-pdfs';
 
 -- RLS для объектов только этого bucket’а
 do $$ begin
-  if not exists (
-    select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_insert_auth'
-  ) then
-    create policy "order_pdfs_insert_auth" on storage.objects for insert to authenticated
-      with check (bucket_id = 'order-pdfs');
-  end if;
+  if has_table_privilege('storage.objects', 'ALTER') then
+    if not exists (
+      select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_insert_auth'
+    ) then
+      create policy "order_pdfs_insert_auth" on storage.objects for insert to authenticated
+        with check (bucket_id = 'order-pdfs');
+    end if;
 
-  if not exists (
-    select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_update_owner'
-  ) then
-    create policy "order_pdfs_update_owner" on storage.objects for update to authenticated
-      using (bucket_id = 'order-pdfs' and owner = auth.uid())
-      with check (bucket_id = 'order-pdfs' and owner = auth.uid());
-  end if;
+    if not exists (
+      select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_update_owner'
+    ) then
+      create policy "order_pdfs_update_owner" on storage.objects for update to authenticated
+        using (bucket_id = 'order-pdfs' and owner = auth.uid())
+        with check (bucket_id = 'order-pdfs' and owner = auth.uid());
+    end if;
 
-  if not exists (
-    select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_delete_owner'
-  ) then
-    create policy "order_pdfs_delete_owner" on storage.objects for delete to authenticated
-      using (bucket_id = 'order-pdfs' and owner = auth.uid());
-  end if;
+    if not exists (
+      select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_delete_owner'
+    ) then
+      create policy "order_pdfs_delete_owner" on storage.objects for delete to authenticated
+        using (bucket_id = 'order-pdfs' and owner = auth.uid());
+    end if;
 
-  if not exists (
-    select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_select_auth'
-  ) then
-    create policy "order_pdfs_select_auth" on storage.objects for select to authenticated
-      using (bucket_id = 'order-pdfs');
+    if not exists (
+      select 1 from pg_policies where schemaname='storage' and tablename='objects' and policyname='order_pdfs_select_auth'
+    ) then
+      create policy "order_pdfs_select_auth" on storage.objects for select to authenticated
+        using (bucket_id = 'order-pdfs');
+    end if;
   end if;
 end $$;
 
