@@ -4735,28 +4735,34 @@ DO $$
 BEGIN
   IF to_regclass('production.plans') IS NOT NULL THEN
     -- 1) Ensure column exists
-    EXECUTE $$ALTER TABLE production.plans ADD COLUMN IF NOT EXISTS order_id uuid$$;
+    EXECUTE $ddl$
+      ALTER TABLE production.plans ADD COLUMN IF NOT EXISTS order_id uuid
+    $ddl$;
 
     -- 2) Backfill from order_code -> orders.assignment_id
-    EXECUTE $$
+    EXECUTE $ddl$
       UPDATE production.plans p
          SET order_id = o.id
         FROM public.orders o
        WHERE p.order_id IS NULL
          AND p.order_code IS NOT NULL
          AND o.assignment_id = p.order_code
-    $$;
+    $ddl$;
 
     -- 3) Recreate FK with CASCADE
-    EXECUTE $$ALTER TABLE production.plans DROP CONSTRAINT IF EXISTS plans_order_id_fkey$$;
-    EXECUTE $$
+    EXECUTE $ddl$
+      ALTER TABLE production.plans DROP CONSTRAINT IF EXISTS plans_order_id_fkey
+    $ddl$;
+    EXECUTE $ddl$
       ALTER TABLE production.plans
         ADD CONSTRAINT plans_order_id_fkey
         FOREIGN KEY (order_id) REFERENCES public.orders(id) ON DELETE CASCADE
-    $$;
+    $ddl$;
 
     -- 4) Helpful index
-    EXECUTE $$CREATE INDEX IF NOT EXISTS idx_production_plans_order ON production.plans(order_id)$$;
+    EXECUTE $ddl$
+      CREATE INDEX IF NOT EXISTS idx_production_plans_order ON production.plans(order_id)
+    $ddl$;
   END IF;
 END
 $$;
@@ -4779,12 +4785,14 @@ $$;
 DO $$
 BEGIN
   IF to_regclass('production.plans') IS NOT NULL THEN
-    EXECUTE $$DROP TRIGGER IF EXISTS trg_plans_set_order_id ON production.plans$$;
-    EXECUTE $$
+    EXECUTE $ddl$
+      DROP TRIGGER IF EXISTS trg_plans_set_order_id ON production.plans
+    $ddl$;
+    EXECUTE $ddl$
       CREATE TRIGGER trg_plans_set_order_id
         BEFORE INSERT OR UPDATE ON production.plans
         FOR EACH ROW EXECUTE FUNCTION production.set_plan_order_id_from_code()
-    $$;
+    $ddl$;
   END IF;
 END
 $$;
